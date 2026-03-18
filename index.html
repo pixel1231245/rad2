@@ -1,0 +1,437 @@
+    <style>
+        :root {
+            --bg-dark: #08090b;
+            --panel-bg: rgba(14, 18, 24, 0.9);
+            --accent-main: #00f2ff; /* Turquoise */
+            --accent-red: #ff4655;
+            --accent-blue: #00d2ff;
+            --accent-green: #00ff88;
+            --text-main: #ece8e1;
+            --text-dim: #7e7e7e;
+            --border-glow: rgba(0, 242, 255, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background-color: var(--bg-dark); 
+            color: var(--text-main); 
+            font-family: 'Outfit', sans-serif; 
+            overflow: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #0c141a 0%, #08090b 100%);
+        }
+
+        /* Layout */
+        #app-container {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Top Header */
+        header {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .brand-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--text-main);
+            text-shadow: 0 0 15px var(--border-glow);
+        }
+
+        /* Radar Area */
+        #radar-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        canvas {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+            box-shadow: 0 0 60px rgba(0,0,0,0.7);
+            border: 1px solid rgba(0, 242, 255, 0.1);
+        }
+
+        /* Sidebar */
+        aside {
+            background: var(--panel-bg);
+            backdrop-filter: blur(30px);
+            border-left: 1px solid rgba(255,255,255,0.03);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.05);
+            padding: 8px 16px;
+            border-radius: 4px;
+            width: fit-content;
+            border: 1px solid rgba(0, 255, 136, 0.1);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-dim);
+        }
+
+        .tab { cursor: pointer; transition: 0.3s; }
+        .tab:hover { color: var(--text-main); }
+        .tab.active {
+            color: var(--accent-main);
+            position: relative;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -13px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent-main);
+            box-shadow: 0 0 10px var(--accent-main);
+        }
+
+        /* Player List */
+        #player-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .player-card {
+            background: rgba(255,255,255,0.02);
+            border-radius: 4px;
+            padding: 14px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-left: 2px solid var(--accent-main);
+            transition: all 0.3s ease;
+        }
+
+        .player-card:hover { 
+            background: rgba(0, 242, 255, 0.05);
+            transform: translateX(8px);
+        }
+
+        .agent-pfp {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .player-info { flex: 1; }
+        .player-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; color: #fff; }
+        .player-meta { font-size: 0.7rem; color: var(--text-dim); display: flex; justify-content: space-between; text-transform: uppercase; }
+
+        .hp-container {
+            width: 100%;
+            height: 2px;
+            background: rgba(255,255,255,0.05);
+            margin-top: 10px;
+            border-radius: 1px;
+        }
+
+        .hp-bar {
+            height: 100%;
+            background: var(--accent-main);
+            box-shadow: 0 0 8px var(--accent-main);
+        }
+
+        /* Footer Controls */
+        .controls {
+            padding-top: 25px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover { 
+            background: var(--accent-main); 
+            color: #000;
+            box-shadow: 0 0 15px var(--border-glow);
+        }
+
+        /* Modals / Selection */
+        .map-selector {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-main);
+            z-index: 100;
+            display: none;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 99;
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <header>
+            <div class="brand-name">PIXEL <span style="color:var(--accent-main)">RADAR</span></div>
+        </header>
+
+        <main id="radar-wrapper">
+            <canvas id="radarCanvas"></canvas>
+            
+            <div style="position: absolute; bottom: 30px; left: 30px; font-size: 0.75rem; color: var(--text-dim); display:flex; gap: 20px; font-weight: 600; letter-spacing: 1px;">
+                <span style="display:flex; align-items:center; gap:8px;"><div style="width:10px; height:10px; background:var(--accent-red); border-radius:50%; box-shadow: 0 0 10px var(--accent-red);"></div> ENEMY</span>
+                <span style="display:flex; align-items:center; gap:8px;"><div style="width:10px; height:10px; background:var(--accent-main); border-radius:50%; box-shadow: 0 0 10px var(--accent-main);"></div> ALLY</span>
+            </div>
+        </main>
+
+        <aside>
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                LIVE SESSION
+            </div>
+
+            <div class="tabs">
+                <div class="tab active">PLAYERS</div>
+                <div class="tab">EVENTS</div>
+                <div class="tab">SETTINGS</div>
+            </div>
+
+            <div id="player-list"></div>
+
+            <div class="controls">
+                <button onclick="resetCalibration()">RESET CALIBRATION</button>
+                <button onclick="toggleMapSelector()">MAP SELECT</button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Map Selection Modal -->
+    <div class="overlay" id="overlay" onclick="toggleMapSelector()"></div>
+    <div class="map-selector" id="mapSelector">
+        <h3 style="margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;">Map Selection</h3>
+        <p style="font-size: 0.7rem; color: var(--accent-main); margin-bottom: 15px; text-transform: uppercase;">Auto-Detection Active</p>
+        <div class="map-grid">
+            <button onclick="changeMap('Abyss')">ABYSS</button>
+            <button onclick="changeMap('Ascent')">ASCENT</button>
+            <button onclick="changeMap('Bind')">BIND</button>
+            <button onclick="changeMap('Breeze')">BREEZE</button>
+            <button onclick="changeMap('Fracture')">FRACTURE</button>
+            <button onclick="changeMap('Haven')">HAVEN</button>
+            <button onclick="changeMap('Icebox')">ICEBOX</button>
+            <button onclick="changeMap('Lotus')">LOTUS</button>
+            <button onclick="changeMap('Pearl')">PEARL</button>
+            <button onclick="changeMap('Split')">SPLIT</button>
+            <button onclick="changeMap('Sunset')">SUNSET</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const canvas = document.getElementById('radarCanvas');
+        const ctx = canvas.getContext('2d');
+        const playerList = document.getElementById('player-list');
+
+        let players = [];
+        let currentMapName = "Haven"; // Default
+        let currentMap = new Image();
+        currentMap.src = `/maps/${currentMapName}_minimap.png`;
+
+        function resize() {
+            const side = Math.min(window.innerHeight * 0.85, (window.innerWidth - 340) * 0.85);
+            canvas.width = side;
+            canvas.height = side;
+        }
+
+        window.onresize = resize;
+        resize();
+
+        socket.on('radarUpdate', (data) => {
+            // Auto Map Switch Logic
+            if (data.map && data.map !== currentMapName) {
+                console.log("Auto-switching map to:", data.map);
+                changeMap(data.map, false); // Switch without manual trigger alert
+            }
+            
+            players = data.players || [];
+            render();
+            updateList();
+        });
+
+        // Ghost Mode: Spectator Protection & Panic Key
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'F9') { // PANIC KEY
+                console.log("PANIC KEY PRESSED. EXITING...");
+                document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%; font-family:sans-serif;'>System Offline. Redirecting...</h1>";
+                setTimeout(() => { window.location.href = "https://www.google.com"; }, 1000);
+            }
+        });
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalAlpha = 0.9;
+            ctx.drawImage(currentMap, 0, 0, canvas.width, canvas.height);
+            ctx.globalAlpha = 1.0;
+
+            players.forEach(p => {
+                if (!p.isAlive) return;
+
+                const x = (p.x / 100) * canvas.width;
+                const y = (p.y / 100) * canvas.height;
+
+                // Close Distance Check (Spectator/Manual Control Protection)
+                // If player is very close (e.g., < 15 units), icon becomes semi-transparent to avoid unnatural aim
+                let opacity = 1.0;
+                let distanceToCenter = Math.sqrt(Math.pow(x - canvas.width/2, 2) + Math.pow(y - canvas.height/2, 2));
+                if (distanceToCenter < 40) opacity = 0.4; 
+
+                ctx.globalAlpha = opacity;
+
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, 25);
+                gradient.addColorStop(0, p.team === 'enemy' ? 'rgba(255, 70, 85, 0.5)' : 'rgba(0, 242, 255, 0.5)');
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, 25, 0, Math.PI * 2);
+                ctx.fill();
+
+                const icon = new Image();
+                icon.src = `/icons/${p.agent.toLowerCase()}.png`;
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(p.angle * Math.PI / 180);
+                
+                ctx.strokeStyle = p.team === 'enemy' ? '#ff4655' : '#00f2ff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-18, -18, 36, 36);
+
+                ctx.drawImage(icon, -17, -17, 34, 34);
+                ctx.restore();
+                ctx.globalAlpha = 1.0;
+
+                // HP Bar
+                ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                ctx.fillRect(x - 18, y - 26, 36, 4);
+                ctx.fillStyle = p.team === 'enemy' ? '#ff4655' : '#00f2ff';
+                ctx.fillRect(x - 18, y - 26, 36 * (p.hp / 100), 3);
+            });
+        }
+
+        function updateList() {
+            playerList.innerHTML = players.map(p => `
+                <div class="player-card" style="border-color: ${p.team === 'enemy' ? '#ff4655' : '#00f2ff'}">
+                    <img src="/icons/${p.agent.toLowerCase()}.png" class="agent-pfp">
+                    <div class="player-info">
+                        <div class="player-name">${p.name}</div>
+                        <div class="player-meta">
+                            <span>${p.agent}</span>
+                            <span style="color:var(--accent-main)">${p.weapon || 'VANDAL'}</span>
+                        </div>
+                        <div class="hp-container">
+                            <div class="hp-bar" style="width: ${p.hp}%; background: ${p.team === 'enemy' ? '#ff4655' : '#00f2ff'}"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Functions
+        function resetCalibration() {
+            socket.emit('command', { type: 'reset' });
+        }
+
+        function toggleMapSelector() {
+            const m = document.getElementById('mapSelector');
+            const o = document.getElementById('overlay');
+            const display = m.style.display === 'block' ? 'none' : 'block';
+            m.style.display = display;
+            o.style.display = display;
+        }
+
+        function changeMap(name, manual = true) {
+            currentMapName = name;
+            currentMap.src = `/maps/${name}_minimap.png`;
+            if (manual) toggleMapSelector();
+        }
+
+        currentMap.onload = render;
+    </script>
+</body>
+</html>
