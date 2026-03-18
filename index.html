@@ -133,6 +133,15 @@
             box-shadow: 0 0 10px var(--accent-main);
         }
 
+        /* Auto-Map Switch */
+        .auto-map-status {
+            font-size: 0.65rem;
+            color: var(--accent-main);
+            margin-top: 5px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
         /* Player List */
         #player-list {
             flex: 1;
@@ -265,6 +274,7 @@
                 <div class="status-dot"></div>
                 LIVE SESSION
             </div>
+            <div class="auto-map-status" id="autoMapText">AUTO-MAP: SCANNING...</div>
 
             <div class="tabs">
                 <div class="tab active">PLAYERS</div>
@@ -298,6 +308,10 @@
             <button onclick="changeMap('Pearl')">PEARL</button>
             <button onclick="changeMap('Split')">SPLIT</button>
             <button onclick="changeMap('Sunset')">SUNSET</button>
+            <button onclick="changeMap('Drift')">DRIFT</button>
+            <button onclick="changeMap('Kasbah')">KASBAH</button>
+            <button onclick="changeMap('District')">DISTRICT</button>
+            <button onclick="changeMap('Piazza')">PIAZZA</button>
         </div>
     </div>
 
@@ -311,7 +325,9 @@
         let players = [];
         let currentMapName = "Haven"; // Default
         let currentMap = new Image();
-        currentMap.src = `/maps/${currentMapName}_minimap.png`;
+        // GitHub Asset Cloud Delivery
+        const GITHUB_BASE = "https://raw.githubusercontent.com/pixel1231245/rad2/main";
+        currentMap.src = `${GITHUB_BASE}/maps/${currentMapName}_minimap.png`;
 
         function resize() {
             const side = Math.min(window.innerHeight * 0.85, (window.innerWidth - 340) * 0.85);
@@ -323,10 +339,11 @@
         resize();
 
         socket.on('radarUpdate', (data) => {
-            // Auto Map Switch Logic
-            if (data.map && data.map !== currentMapName) {
+            // Auto Map Switch Logic with Protection
+            if (data.map && data.map !== "None" && data.map !== currentMapName) {
                 console.log("Auto-switching map to:", data.map);
-                changeMap(data.map, false); // Switch without manual trigger alert
+                document.getElementById('autoMapText').innerText = `AUTO-MAP: DETECTED ${data.map.toUpperCase()}`;
+                changeMap(data.map, false); 
             }
             
             players = data.players || [];
@@ -356,7 +373,6 @@
                 const y = (p.y / 100) * canvas.height;
 
                 // Close Distance Check (Spectator/Manual Control Protection)
-                // If player is very close (e.g., < 15 units), icon becomes semi-transparent to avoid unnatural aim
                 let opacity = 1.0;
                 let distanceToCenter = Math.sqrt(Math.pow(x - canvas.width/2, 2) + Math.pow(y - canvas.height/2, 2));
                 if (distanceToCenter < 40) opacity = 0.4; 
@@ -372,7 +388,7 @@
                 ctx.fill();
 
                 const icon = new Image();
-                icon.src = `/icons/${p.agent.toLowerCase()}.png`;
+                icon.src = `${GITHUB_BASE}/icons/${p.agent.toLowerCase()}.png`;
                 
                 ctx.save();
                 ctx.translate(x, y);
@@ -397,7 +413,7 @@
         function updateList() {
             playerList.innerHTML = players.map(p => `
                 <div class="player-card" style="border-color: ${p.team === 'enemy' ? '#ff4655' : '#00f2ff'}">
-                    <img src="/icons/${p.agent.toLowerCase()}.png" class="agent-pfp">
+                    <img src="${GITHUB_BASE}/icons/${p.agent.toLowerCase()}.png" class="agent-pfp">
                     <div class="player-info">
                         <div class="player-name">${p.name}</div>
                         <div class="player-meta">
@@ -427,7 +443,7 @@
 
         function changeMap(name, manual = true) {
             currentMapName = name;
-            currentMap.src = `/maps/${name}_minimap.png`;
+            currentMap.src = `${GITHUB_BASE}/maps/${name}_minimap.png`;
             if (manual) toggleMapSelector();
         }
 
